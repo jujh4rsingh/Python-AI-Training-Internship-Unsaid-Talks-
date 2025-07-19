@@ -1,0 +1,340 @@
+{
+  "name": "The LinkedIn Post Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Topic & Target Audience",
+        "formDescription": "Hi!, Fill in the details below to get your personalised LinkedIn post.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic",
+              "placeholder": "Type about which topic you want to create a post.",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target Audience",
+              "placeholder": "Audience u wanna target?",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        60,
+        80
+      ],
+      "id": "01c6d94c-5ca1-4b23-903e-cd49610d8328",
+      "name": "Details",
+      "webhookId": "1d02f8a6-e030-4e97-8bc5-8afe63b70745"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        280,
+        300
+      ],
+      "id": "9bcc35af-b8de-4c7d-8763-c4f5c1f81155",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kzI4RKP73e8nNKWt",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ],
+      "id": "d6965924-9943-49ab-9c40-28d649059dc8",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"Generate a professional LinkedIn post about {{ $json.Topic }}, make it unique and different each time even for similar topics.\"",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a helpful assistant that creates a LinkdIn post with following rules:\n1. do not add headers and footers.\n2. do not had hyphens.\n3. add facts and figures in the post.\n4. add minimum of 3 hashtags at the end of the post.\n5. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        280,
+        80
+      ],
+      "id": "c1f16f5e-2dff-466e-9bde-bda728dca5c9",
+      "name": "LinkedIn Post Generator"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a sharp, aesthetic and modern image on {{ $('Details').item.json.Topic }}.It should not exceed more than 500 words.",
+        "options": {
+          "systemMessage": "**Role**  \nYou are a helpful assistant that generates high-quality images using the Stability.ai (Stable Diffusion) image generation model based on the topic of a LinkedIn post.\n\n**Tasks**  \n1. Generate an accurate and visually appealing image that reflects the topic of the LinkedIn post. The image should follow the theme closely and be relevant to professionals.\n2. Ensure human figures (if included) have well-proportioned, realistic hands and feet, avoiding anatomical errors.\n3. Incorporate visual elements like charts, graphs, or numerical figures where appropriate, to enhance clarity and impact.\n4. Use a soft, modern, and professional color palette that complements the tone of LinkedIn and is easy on the eyes.\n5. Ensure the image evokes a positive, inspirational, and career-forward message — it should feel uplifting and suitable for a business audience.\n6. The prompt should not exceed more than 500 words."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        640,
+        80
+      ],
+      "id": "241ed86a-270e-42f1-86b2-a3bdad3967e0",
+      "name": "LinkedIn Image Generator"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        240
+      ],
+      "id": "bb6ec69b-5f0a-4d29-aec8-e2504066abab",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kzI4RKP73e8nNKWt",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stability.ai/v2beta/stable-image/generate/sd3",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sk-V8revsKVqq72HvJ1obIlMvhHtYzPomRVmFhw2VTqHQcCpnMR"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.output }}"
+            },
+            {
+              "name": "model",
+              "value": "sd3.5-large"
+            },
+            {
+              "name": "mode",
+              "value": "text-to-image"
+            },
+            {
+              "name": "size",
+              "value": "1024x1024"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        100
+      ],
+      "id": "f4230ebd-0d43-43d2-80cc-5477e044b179",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    binary: {\n      data: {\n        data: $input.first().json.image,          // your base64 string\n        mimeType: \"image/png\",         // required\n        fileName: \"ai-image.png\"       // change if you want\n      }\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        100
+      ],
+      "id": "f06311e0-9e09-43b9-b93f-354978132dcf",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "person": "PZabiRaC_c",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1660,
+        100
+      ],
+      "id": "a294e8c3-14a9-4b78-87b6-6d1f31b9b02c",
+      "name": "Create a post",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "mDH4H6EcGubTFps8",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const post =  $('LinkedIn Post Generator').first().json.output || $('LinkedIn Image Generator').first().json.output // adapt to your variable\nconst timestamp = new Date().toISOString();\n\nreturn {\n  json: {\n    text: `${post} • ${timestamp}` // now LinkedIn sees it as unique\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        100
+      ],
+      "id": "4dd38c90-1db2-4dde-98a9-d31c8af40454",
+      "name": "Code1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Details": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Post Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LinkedIn Post Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Post Generator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Post Generator": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Image Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LinkedIn Image Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Image Generator": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Create a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a214fc74-8b4e-4cec-8855-943e3734310b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "03234dd27044323d202538a60109a115cbd45616aa478880ba94fdf78e5ef5d6"
+  },
+  "id": "HmPiqOU4Rb50hCNk",
+  "tags": []
+}
